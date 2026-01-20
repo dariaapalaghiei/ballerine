@@ -28,11 +28,17 @@ let BALLERINA_5, BACINO_5;
 let BALLERINA_6, BACINO_6; 
 let BALLERINA_7, GAMBA_DX_7, GAMBA_SX_7, BRACCIO_DX_7, BRACCIO_SX_7; 
 let BALLERINA_8, BRACCIO_DX_8, BRACCIO_SX_8;
+let MAESTRO, MAESTRO_BR_DX, MAESTRO_BR_SX;
 
-let isJumpingB7 = false;
-let jumpStartTimeB7 = 0;
-let isSpeedBoosted = false;
+// VARIABILI BALLERINE MIXAMO (6 LOADERS SEPARATI)
+let B1, mix1, bow1, fall1;
+let B1B, mix1B, bow1B, fall1B;
+let B2, mix2, bow2, fall2;
+let B2B, mix2B, bow2B, fall2B;
+let B3, mix3, bow3, fall3;
+let B3B, mix3B, bow3B, fall3B;
 
+let isJumpingB7 = false, jumpStartTimeB7 = 0, isSpeedBoosted = false;
 const HELPERS = []; 
 let helpersVisible = true;
 const clock = new THREE.Clock();
@@ -42,6 +48,7 @@ const paramsB5 = { posX: -2870, posY: -4, posZ: 570, rotY: 0.98, bounceAmp: 10.0
 const paramsB6 = { posX: -160, posY: -4, posZ: 100, rotY: 0.98, bounceAmp: 5.0, bounceFreq: 4.0, currentRotSpeed: -0.04 };
 const paramsB7 = { posX: 940, posY: 14, posZ: -410, jumpHeight: 300, jumpSpeed: 4, splitAmp: 1.5 };
 const paramsB8 = { posX: -40, posY: -4, posZ: -4, armAmp: 0.1, armFreq: 8.0 };
+const paramsMaestro = { posX: 210, posY: -70, posZ: -200, armAmp: 0.5, armFreq: 10 };
 
 RectAreaLightUniformsLib.init();
 init();
@@ -73,26 +80,8 @@ function init() {
     FP_CONTROLS.lookSpeed = 0.1;
 
     GUI_GLOBAL = new GUI();
-    const f5 = GUI_GLOBAL.addFolder('Ballerina 5 (Castana)');
-    f5.add(paramsB5, 'posX', -5000, 5000).name('X').onChange(v => { if(BALLERINA_5) BALLERINA_5.position.x = v; });
-    f5.add(paramsB5, 'posZ', -5000, 5000).name('Z').onChange(v => { if(BALLERINA_5) BALLERINA_5.position.z = v; });
-
-    // NUOVA GUI BALLERINA 6 (ASIATICA)
-    const f6 = GUI_GLOBAL.addFolder('Ballerina 6 (Asiatica)');
-    f6.add(paramsB6, 'posX', -5000, 5000).name('X').onChange(v => { if(BALLERINA_6) BALLERINA_6.position.x = v; });
-    f6.add(paramsB6, 'posZ', -5000, 5000).name('Z').onChange(v => { if(BALLERINA_6) BALLERINA_6.position.z = v; });
-
-    const f7 = GUI_GLOBAL.addFolder('Ballerina 7 (SPACCATA)');
-    f7.add(paramsB7, 'posX', -5000, 5000).name('X').onChange(v => { if(BALLERINA_7) BALLERINA_7.position.x = v; });
-    f7.add(paramsB7, 'posZ', -5000, 5000).name('Z').onChange(v => { if(BALLERINA_7) BALLERINA_7.position.z = v; });
-    f7.add(paramsB7, 'jumpHeight', 0, 1000).name('Altezza Salto');
-    f7.add(paramsB7, 'jumpSpeed', 0, 10).name('Velocità');
-    f7.add(paramsB7, 'splitAmp', 0, Math.PI).name('Apertura Spaccata');
-
-    const f8 = GUI_GLOBAL.addFolder('Ballerina 8 (Bionda)');
-    f8.add(paramsB8, 'posX', -5000, 5000).name('X').onChange(v => { if(BALLERINA_8) BALLERINA_8.position.x = v; });
-    f8.add(paramsB8, 'posZ', -5000, 5000).name('Z').onChange(v => { if(BALLERINA_8) BALLERINA_8.position.z = v; });
-    f8.add(paramsB8, 'armAmp', 0, 1.5).name('Ampiezza Braccia');
+    const fMaestro = GUI_GLOBAL.addFolder('Maestro di Ballo');
+    fMaestro.add(paramsMaestro, 'posX', -5000, 5000).onChange(v => { if(MAESTRO) MAESTRO.position.x = v; });
 
     LIGHT_SETUP.forEach(c => {
         const l = new THREE.RectAreaLight(c.col, c.int, c.w, c.h);
@@ -101,23 +90,9 @@ function init() {
         const h = new RectAreaLightHelper(l); SCENE.add(h); HELPERS.push(h);
     });
 
-    const newLightsData = [
-        { name: 'Luce_A', pos: [-700, 525, -2500], rotX: -1.46398, w: 159.968, h: 289.942, int: 9.45, col: 0xfef1d7 },
-        { name: 'Luce_B', pos: [-1280, 486, -3110], rotX: -1.79070, w: 500, h: 159.968, int: 17.3, col: 0xfef1d7 },
-        { name: 'Luce_C', pos: [-500, 500, -3110], rotX: -1.95407, w: 289.942, h: 94.981, int: 18.6, col: 0xfef1d7 }
-    ];
-
-    newLightsData.forEach(d => {
-        const l = new THREE.RectAreaLight(d.col, d.int, d.w, d.h);
-        l.position.set(...d.pos); l.rotation.x = d.rotX;
-        SCENE.add(l);
-        const h = new RectAreaLightHelper(l); SCENE.add(h); HELPERS.push(h);
-    });
-
     const shadowLight = new THREE.DirectionalLight(0xffffff, 1.5);
     shadowLight.position.set(-800, 2000, -2500);
     shadowLight.castShadow = true;
-    shadowLight.shadow.mapSize.set(2048, 2048);
     SCENE.add(shadowLight);
     SCENE.add(new THREE.AmbientLight(0xffffff, 0.2));
 
@@ -132,81 +107,97 @@ function init() {
         obj.traverse(n => { if(n.isMesh) { n.castShadow = cast; n.receiveShadow = true; } });
     };
 
+    // LOADERS AMBIENTE
     loader.load('/TEATROBallerine.glb', (g) => { g.scene.scale.set(150, 150, 150); applyShadows(g.scene, false); SCENE.add(g.scene); });
     loader.load('/stanzapre.glb', (g) => { g.scene.scale.set(400, 400, 400); g.scene.position.set(-880, 45, -2530); applyShadows(g.scene, false); SCENE.add(g.scene); });
     
-    loader.load('/ScenaPreAnimata.glb', (g) => {
-        MODELLO_OLIVASTRA = g.scene; MODELLO_OLIVASTRA.scale.set(400, 400, 400); MODELLO_OLIVASTRA.position.set(-500, 45, -2500);
-        applyShadows(MODELLO_OLIVASTRA, true);
-        SCENE.add(MODELLO_OLIVASTRA); TORSO_OLIVASTRA = MODELLO_OLIVASTRA.getObjectByName('torso002');
+    // LOADERS BALLERINE ORIGINALI
+    loader.load('/ScenaPreAnimata.glb', (g) => { MODELLO_OLIVASTRA = g.scene; MODELLO_OLIVASTRA.scale.set(400, 400, 400); MODELLO_OLIVASTRA.position.set(-500, 45, -2500); applyShadows(MODELLO_OLIVASTRA, true); SCENE.add(MODELLO_OLIVASTRA); TORSO_OLIVASTRA = MODELLO_OLIVASTRA.getObjectByName('torso002'); });
+    loader.load('/ballerina_rossastra2.glb', (g) => { BALLERINA_2 = g.scene; BALLERINA_2.scale.set(400, 400, 400); BALLERINA_2.position.set(-900, 45, -2500); applyShadows(BALLERINA_2, true); SCENE.add(BALLERINA_2); GAMBA_DX_2 = BALLERINA_2.getObjectByName('gamba_dx003'); BRACCIO_DX_2_A = BALLERINA_2.getObjectByName('braccio_dx005'); BRACCIO_DX_2_B = BALLERINA_2.getObjectByName('braccio_dx006'); });
+    loader.load('/ballerina_rossastra3.glb', (g) => { BALLERINA_3 = g.scene; BALLERINA_3.scale.set(400, 400, 400); BALLERINA_3.position.set(-600, 60, -2500); applyShadows(BALLERINA_3, true); SCENE.add(BALLERINA_3); GAMBA_DX_3 = BALLERINA_3.getObjectByName('gamba_dx001'); });
+    loader.load('/ballerina_nera.glb', (g) => { BALLERINA_4 = g.scene; BALLERINA_4.scale.set(400, 400, 400); BALLERINA_4.position.set(-980, 60, -2300); applyShadows(BALLERINA_4, true); SCENE.add(BALLERINA_4); GAMBA_DX_4 = BALLERINA_4.getObjectByName('gamba_dx045'); BRACCIO_DX_4 = BALLERINA_4.getObjectByName('braccio_dx074'); });
+    loader.load('/ballerina_castana.glb', (g) => { BALLERINA_5 = g.scene; BALLERINA_5.scale.set(150, 150, 150); BALLERINA_5.position.set(paramsB5.posX, paramsB5.posY, paramsB5.posZ); applyShadows(BALLERINA_5, true); SCENE.add(BALLERINA_5); BACINO_5 = BALLERINA_5.getObjectByName('bacino001'); });
+    loader.load('/ballerina_asiatica.glb', (g) => { BALLERINA_6 = g.scene; BALLERINA_6.scale.set(150, 150, 150); BALLERINA_6.position.set(paramsB6.posX, paramsB6.posY, paramsB6.posZ); applyShadows(BALLERINA_6, true); SCENE.add(BALLERINA_6); BACINO_6 = BALLERINA_6.getObjectByName('bacino033'); });
+    loader.load('/ballerina_rossa.glb', (g) => { BALLERINA_7 = g.scene; BALLERINA_7.scale.set(150, 150, 150); BALLERINA_7.position.set(paramsB7.posX, paramsB7.posY, paramsB7.posZ); applyShadows(BALLERINA_7, true); SCENE.add(BALLERINA_7); GAMBA_DX_7 = BALLERINA_7.getObjectByName('gamba_dx040'); GAMBA_SX_7 = BALLERINA_7.getObjectByName('gamba_sx040'); BRACCIO_DX_7 = BALLERINA_7.getObjectByName('braccio_dx063'); BRACCIO_SX_7 = BALLERINA_7.getObjectByName('braccio_dx064'); });
+    loader.load('/ballerina_bionda.glb', (g) => { BALLERINA_8 = g.scene; BALLERINA_8.scale.set(150, 150, 150); BALLERINA_8.position.set(paramsB8.posX, paramsB8.posY, paramsB8.posZ); applyShadows(BALLERINA_8, true); SCENE.add(BALLERINA_8); BRACCIO_DX_8 = BALLERINA_8.getObjectByName('braccio_dx017'); BRACCIO_SX_8 = BALLERINA_8.getObjectByName('braccio_dx018'); });
+    loader.load('/maestro_di_ballo.glb', (g) => { MAESTRO = g.scene; MAESTRO.scale.set(170, 170, 170); MAESTRO.position.set(paramsMaestro.posX, paramsMaestro.posY, paramsMaestro.posZ); applyShadows(MAESTRO, true); SCENE.add(MAESTRO); MAESTRO_BR_DX = MAESTRO.getObjectByName('braccio_dx009'); MAESTRO_BR_SX = MAESTRO.getObjectByName('braccio_sx009'); });
+
+    // BALLERINA 1 - CARICAMENTO 1
+    loader.load('/ballerina_indiana_animata.glb', (g) => {
+        B1 = g.scene; B1.scale.set(10000, 10000, 10000); B1.position.set(400, -4, 200); SCENE.add(B1); applyShadows(B1, true);
+        mix1 = new THREE.AnimationMixer(B1);
+        bow1 = mix1.clipAction(THREE.AnimationClip.findByName(g.animations, 'Inchino_1'));
+        fall1 = mix1.clipAction(THREE.AnimationClip.findByName(g.animations, 'Caduta_1'));
+        fall1.clampWhenFinished = true; fall1.loop = THREE.LoopOnce; bow1.play();
+    });
+    // BALLERINA 1 - CARICAMENTO 2 (DUPLICATO SICURO)
+    loader.load('/ballerina_indiana_animata.glb', (g) => {
+        B1B = g.scene; B1B.scale.set(10000, 10000, 10000); B1B.position.set(500, -4, 300); SCENE.add(B1B); applyShadows(B1B, true);
+        mix1B = new THREE.AnimationMixer(B1B);
+        bow1B = mix1B.clipAction(THREE.AnimationClip.findByName(g.animations, 'Inchino_1'));
+        fall1B = mix1B.clipAction(THREE.AnimationClip.findByName(g.animations, 'Caduta_1'));
+        fall1B.clampWhenFinished = true; fall1B.loop = THREE.LoopOnce; bow1B.play();
     });
 
-    loader.load('/ballerina_rossastra2.glb', (g) => {
-        BALLERINA_2 = g.scene; BALLERINA_2.scale.set(400, 400, 400); BALLERINA_2.position.set(-900, 45, -2500); BALLERINA_2.rotation.y = 0.67;
-        applyShadows(BALLERINA_2, true); SCENE.add(BALLERINA_2); 
-        GAMBA_DX_2 = BALLERINA_2.getObjectByName('gamba_dx003');
-        BRACCIO_DX_2_A = BALLERINA_2.getObjectByName('braccio_dx005'); BRACCIO_DX_2_B = BALLERINA_2.getObjectByName('braccio_dx006');
+    // BALLERINA 2 - CARICAMENTO 1
+    loader.load('/ballerina_asiatica_animata.glb', (g) => {
+        B2 = g.scene; B2.scale.set(60000, 60000, 60000); B2.position.set(600, -4, 200); SCENE.add(B2); applyShadows(B2, true);
+        mix2 = new THREE.AnimationMixer(B2);
+        bow2 = mix2.clipAction(THREE.AnimationClip.findByName(g.animations, 'Inchino_2.001'));
+        fall2 = mix2.clipAction(THREE.AnimationClip.findByName(g.animations, 'Caduta_2.001'));
+        fall2.clampWhenFinished = true; fall2.loop = THREE.LoopOnce; bow2.play();
+    });
+    // BALLERINA 2 - CARICAMENTO 2
+    loader.load('/ballerina_asiatica_animata.glb', (g) => {
+        B2B = g.scene; B2B.scale.set(60000, 60000, 60000); B2B.position.set(700, -4, 300); SCENE.add(B2B); applyShadows(B2B, true);
+        mix2B = new THREE.AnimationMixer(B2B);
+        bow2B = mix2B.clipAction(THREE.AnimationClip.findByName(g.animations, 'Inchino_2.001'));
+        fall2B = mix2B.clipAction(THREE.AnimationClip.findByName(g.animations, 'Caduta_2.001'));
+        fall2B.clampWhenFinished = true; fall2B.loop = THREE.LoopOnce; bow2B.play();
     });
 
-    loader.load('/ballerina_rossastra3.glb', (g) => {
-        BALLERINA_3 = g.scene; BALLERINA_3.scale.set(400, 400, 400); BALLERINA_3.position.set(-600, 60, -2500);
-        applyShadows(BALLERINA_3, true); SCENE.add(BALLERINA_3); 
-        GAMBA_DX_3 = BALLERINA_3.getObjectByName('gamba_dx001');
+    // BALLERINA 3 - CARICAMENTO 1
+    loader.load('/ballerina_nera_animata.glb', (g) => {
+        B3 = g.scene; B3.scale.set(10000, 10000, 10000); B3.position.set(800, -4, 200); SCENE.add(B3); applyShadows(B3, true);
+        mix3 = new THREE.AnimationMixer(B3);
+        bow3 = mix3.clipAction(THREE.AnimationClip.findByName(g.animations, 'Inchino_3'));
+        fall3 = mix3.clipAction(THREE.AnimationClip.findByName(g.animations, 'Caduta_3'));
+        fall3.clampWhenFinished = true; fall3.loop = THREE.LoopOnce; bow3.play();
     });
-
-    loader.load('/ballerina_nera.glb', (g) => {
-        BALLERINA_4 = g.scene; BALLERINA_4.scale.set(400, 400, 400); BALLERINA_4.position.set(-980, 60, -2300);
-        applyShadows(BALLERINA_4, true); SCENE.add(BALLERINA_4); 
-        GAMBA_DX_4 = BALLERINA_4.getObjectByName('gamba_dx045');
-        BRACCIO_DX_4 = BALLERINA_4.getObjectByName('braccio_dx074');
-    });
-
-    loader.load('/ballerina_castana.glb', (g) => {
-        BALLERINA_5 = g.scene; BALLERINA_5.scale.set(150, 150, 150); BALLERINA_5.position.set(paramsB5.posX, paramsB5.posY, paramsB5.posZ);
-        applyShadows(BALLERINA_5, true); SCENE.add(BALLERINA_5);
-        BACINO_5 = BALLERINA_5.getObjectByName('bacino001');
-    });
-
-    loader.load('/ballerina_asiatica.glb', (g) => {
-        BALLERINA_6 = g.scene; BALLERINA_6.scale.set(150, 150, 150); BALLERINA_6.position.set(paramsB6.posX, paramsB6.posY, paramsB6.posZ);
-        applyShadows(BALLERINA_6, true); SCENE.add(BALLERINA_6);
-        BACINO_6 = BALLERINA_6.getObjectByName('bacino033');
-    });
-
-    loader.load('/ballerina_rossa.glb', (g) => {
-        BALLERINA_7 = g.scene; BALLERINA_7.scale.set(150, 150, 150); BALLERINA_7.position.set(paramsB7.posX, paramsB7.posY, paramsB7.posZ);
-        applyShadows(BALLERINA_7, true); SCENE.add(BALLERINA_7);
-        GAMBA_DX_7 = BALLERINA_7.getObjectByName('gamba_dx040');
-        GAMBA_SX_7 = BALLERINA_7.getObjectByName('gamba_sx040'); 
-        BRACCIO_DX_7 = BALLERINA_7.getObjectByName('braccio_dx063');
-        BRACCIO_SX_7 = BALLERINA_7.getObjectByName('braccio_dx064');
-    });
-
-    loader.load('/ballerina_bionda.glb', (g) => {
-        BALLERINA_8 = g.scene; BALLERINA_8.scale.set(150, 150, 150); BALLERINA_8.position.set(paramsB8.posX, paramsB8.posY, paramsB8.posZ);
-        applyShadows(BALLERINA_8, true); SCENE.add(BALLERINA_8);
-        BRACCIO_DX_8 = BALLERINA_8.getObjectByName('braccio_dx017');
-        BRACCIO_SX_8 = BALLERINA_8.getObjectByName('braccio_dx018');
+    // BALLERINA 3 - CARICAMENTO 2
+    loader.load('/ballerina_nera_animata.glb', (g) => {
+        B3B = g.scene; B3B.scale.set(10000, 10000, 10000); B3B.position.set(900, -4, 300); SCENE.add(B3B); applyShadows(B3B, true);
+        mix3B = new THREE.AnimationMixer(B3B);
+        bow3B = mix3B.clipAction(THREE.AnimationClip.findByName(g.animations, 'Inchino_3'));
+        fall3B = mix3B.clipAction(THREE.AnimationClip.findByName(g.animations, 'Caduta_3'));
+        fall3B.clampWhenFinished = true; fall3B.loop = THREE.LoopOnce; bow3B.play();
     });
 }
 
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
-    if (key === 'j' && !isJumpingB7) { isJumpingB7 = true; jumpStartTimeB7 = clock.getElapsedTime(); }
-    if (key === 's') {
-        isSpeedBoosted = !isSpeedBoosted;
-        if (isSpeedBoosted) { paramsB5.currentRotSpeed = 0.35; paramsB6.currentRotSpeed = -0.34; } 
-        else { paramsB5.currentRotSpeed = 0.05; paramsB6.currentRotSpeed = -0.04; }
+    
+    if (key === 'e') {
+        const fall = (i, c) => { if(i && c) { i.fadeOut(0.5); c.reset().fadeIn(0.5).play(); } };
+        fall(bow1, fall1); fall(bow1B, fall1B);
+        fall(bow2, fall2); fall(bow2B, fall2B);
+        fall(bow3, fall3); fall(bow3B, fall3B);
     }
+    
+    if (key === 'i') {
+        const rise = (i, c) => { if(i && c) { c.fadeOut(0.5); i.reset().fadeIn(0.5).play(); } };
+        rise(bow1, fall1); rise(bow1B, fall1B);
+        rise(bow2, fall2); rise(bow2B, fall2B);
+        rise(bow3, fall3); rise(bow3B, fall3B);
+    }
+
+    if (key === 's') { isSpeedBoosted = !isSpeedBoosted; paramsB5.currentRotSpeed = isSpeedBoosted ? 0.35 : 0.05; paramsB6.currentRotSpeed = isSpeedBoosted ? -0.34 : -0.04; }
     if (key === 'c') controlsEnabled = !controlsEnabled;
     if (key === 'h') { helpersVisible = !helpersVisible; HELPERS.forEach(h => h.visible = helpersVisible); }
-    if (key === 'p') console.log("Cam:", { pos: CAMERA.position, rot: CAMERA.rotation });
     if (cameraViews[key]) {
         const v = cameraViews[key];
-        CAMERA.position.set(v.pos.x, v.pos.y, v.pos.z);
-        CAMERA.rotation.set(v.rot.x, v.rot.y, v.rot.z);
-        CAMERA.setFocalLength(v.focalLength);
-        CAMERA.updateProjectionMatrix();
+        CAMERA.position.set(v.pos.x, v.pos.y, v.pos.z); CAMERA.rotation.set(v.rot.x, v.rot.y, v.rot.z);
+        CAMERA.setFocalLength(v.focalLength); CAMERA.updateProjectionMatrix();
     }
 });
 
@@ -216,49 +207,38 @@ function animate() {
     const elapsed = clock.getElapsedTime();
     if (FP_CONTROLS && controlsEnabled) FP_CONTROLS.update(delta);
 
-    const wave = Math.sin(elapsed * 3) * 0.5;
-    const waveBraccia = Math.sin(elapsed * 4) * 0.3;
+    // Update Mixers (TUTTI E 6)
+    if(mix1) mix1.update(delta); if(mix1B) mix1B.update(delta);
+    if(mix2) mix2.update(delta); if(mix2B) mix2B.update(delta);
+    if(mix3) mix3.update(delta); if(mix3B) mix3B.update(delta);
+
+    // Animazioni Ballerine manuali
     if (TORSO_OLIVASTRA) TORSO_OLIVASTRA.rotation.z = Math.sin(elapsed * 1.5) * 0.3;
-    if (GAMBA_DX_2) GAMBA_DX_2.rotation.y = wave; 
-    if (BRACCIO_DX_2_A) BRACCIO_DX_2_A.rotation.z = waveBraccia * 0.4;
-    if (BRACCIO_DX_2_B) BRACCIO_DX_2_B.rotation.z = waveBraccia * 0.4;
+    if (GAMBA_DX_2) GAMBA_DX_2.rotation.y = Math.sin(elapsed * 3) * 0.5;
+    if (BRACCIO_DX_2_A) BRACCIO_DX_2_A.rotation.z = Math.sin(elapsed * 4) * 0.12;
     if (GAMBA_DX_3) GAMBA_DX_3.rotation.y = Math.sin(elapsed * 2) * 0.6; 
     if (BALLERINA_4 && GAMBA_DX_4) GAMBA_DX_4.rotation.y = Math.sin(elapsed * 2) * 1;
-    if (BRACCIO_DX_4) BRACCIO_DX_4.rotation.x = waveBraccia; 
     
-    if (BALLERINA_5) {
-        if (BACINO_5) BACINO_5.rotation.z += paramsB5.currentRotSpeed; 
-        BALLERINA_5.position.y = paramsB5.posY + Math.abs(Math.sin(elapsed * paramsB5.bounceFreq)) * paramsB5.bounceAmp;
-    }
-    if (BALLERINA_6) {
-        if (BACINO_6) BACINO_6.rotation.z += paramsB6.currentRotSpeed; 
-        BALLERINA_6.position.y = paramsB6.posY + Math.abs(Math.sin(elapsed * paramsB6.bounceFreq)) * paramsB6.bounceAmp;
-    }
+    if (BALLERINA_5) { if (BACINO_5) BACINO_5.rotation.z += paramsB5.currentRotSpeed; BALLERINA_5.position.y = paramsB5.posY + Math.abs(Math.sin(elapsed * paramsB5.bounceFreq)) * paramsB5.bounceAmp; }
+    if (BALLERINA_6) { if (BACINO_6) BACINO_6.rotation.z += paramsB6.currentRotSpeed; BALLERINA_6.position.y = paramsB6.posY + Math.abs(Math.sin(elapsed * paramsB6.bounceFreq)) * paramsB6.bounceAmp; }
+    if (BALLERINA_8) { const aW = Math.sin(elapsed * paramsB8.armFreq) * paramsB8.armAmp; if (BRACCIO_DX_8) BRACCIO_DX_8.rotation.z = aW; if (BRACCIO_SX_8) BRACCIO_SX_8.rotation.z = -aW; }
 
-    if (BALLERINA_8) {
-        const armWave = Math.sin(elapsed * paramsB8.armFreq) * paramsB8.armAmp;
-        if (BRACCIO_DX_8) BRACCIO_DX_8.rotation.z = armWave;
-        if (BRACCIO_SX_8) BRACCIO_SX_8.rotation.z = -armWave;
+    if (MAESTRO) {
+        const maestroWave = Math.sin(elapsed * paramsMaestro.armFreq) * paramsMaestro.armAmp;
+        if (MAESTRO_BR_DX) MAESTRO_BR_DX.rotation.y = maestroWave;
+        if (MAESTRO_BR_SX) MAESTRO_BR_SX.rotation.y = -maestroWave;
     }
 
     if (BALLERINA_7 && isJumpingB7) {
-        const jumpElapsed = clock.getElapsedTime() - jumpStartTimeB7;
-        const t = jumpElapsed * paramsB7.jumpSpeed;
+        const t = (elapsed - jumpStartTimeB7) * paramsB7.jumpSpeed;
         if (t <= Math.PI) {
-            const jumpFactor = Math.sin(t);
-            const splitFactor = Math.pow(jumpFactor, 2);
-            BALLERINA_7.position.y = paramsB7.posY + jumpFactor * paramsB7.jumpHeight;
-            if (GAMBA_DX_7) GAMBA_DX_7.rotation.y = splitFactor * paramsB7.splitAmp;
-            if (GAMBA_SX_7) GAMBA_SX_7.rotation.y = splitFactor * paramsB7.splitAmp;
-            if (BRACCIO_DX_7) BRACCIO_DX_7.rotation.z = -splitFactor * (paramsB7.splitAmp * 0.7);
-            if (BRACCIO_SX_7) BRACCIO_SX_7.rotation.z = splitFactor * (paramsB7.splitAmp * 0.7);
+            const jF = Math.sin(t), sF = Math.pow(jF, 2);
+            BALLERINA_7.position.y = paramsB7.posY + jF * paramsB7.jumpHeight;
+            if (GAMBA_DX_7) GAMBA_DX_7.rotation.y = sF * paramsB7.splitAmp;
+            if (GAMBA_SX_7) GAMBA_SX_7.rotation.y = sF * paramsB7.splitAmp;
         } else {
-            isJumpingB7 = false;
-            BALLERINA_7.position.y = paramsB7.posY;
-            if (GAMBA_DX_7) GAMBA_DX_7.rotation.y = 0;
-            if (GAMBA_SX_7) GAMBA_SX_7.rotation.y = 0;
-            if (BRACCIO_DX_7) BRACCIO_DX_7.rotation.z = 0;
-            if (BRACCIO_SX_7) BRACCIO_SX_7.rotation.z = 0;
+            isJumpingB7 = false; BALLERINA_7.position.y = paramsB7.posY;
+            if (GAMBA_DX_7) GAMBA_DX_7.rotation.y = 0; if (GAMBA_SX_7) GAMBA_SX_7.rotation.y = 0;
         }
     }
 
